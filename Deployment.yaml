@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: project1
+  name: project1
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: project1
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: project1
+    spec:
+      containers:
+      - image: ambawatyuvaraj/cicd-project-1
+        name: cicd-project-1
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 80
+        resources: {}
+status: {}
