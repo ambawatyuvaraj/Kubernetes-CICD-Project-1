@@ -1,5 +1,9 @@
 - hosts: all
   become: true
+  become_user: ubuntu
+  become_method: su
+  become_flags: '--login'
+  ansible_become_pass: amazing@123
   tasks:
      - name: create new deployment
        command: kubectl apply -f /home/ubuntu/Deployment.yaml
