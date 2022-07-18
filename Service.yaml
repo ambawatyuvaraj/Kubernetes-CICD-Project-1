@@ -10,8 +10,7 @@ spec:
     app: project1
   ports:
       # By default and for convenience, the `targetPort` is set to the same value as the `port` field.
-    - port: 80
-      targetPort: 80
-      # Optional field
+    - port: 8080  #Containers exposed port
+      targetPort: 80  # Pods port
       # By default and for convenience, the Kubernetes control plane will allocate a port from a range (default: 30000-32767)
-      nodePort: 30007
+      nodePort: 31200
