@@ -1,0 +1,47 @@
+node {
+    
+       stage('Git checkout'){
+           git 'https://github.com/b1ackr0s3/Kubernetes-CICD-Project-1.git'
+       }
+       stage('Sending files to Ansible over SSH to build'){
+           sshagent(['ansible_login']) {
+              sh 'ssh -o StrictHostKeyChecking=no ubuntu@172.31.9.81'
+              sh 'scp /var/lib/jenkins/workspace/cicd-project-1/* ubuntu@172.31.9.81:/home/ubuntu'
+          }
+       }
+       stage('Bulding docker image on Ansible server'){
+           sshagent(['ansible_login']) {
+              sh 'ssh -o StrictHostKeyChecking=no ubuntu@172.31.9.81 cd /home/ubuntu/'
+              sh 'ssh -o StrictHostKeyChecking=no ubuntu@172.31.9.81 docker image build -t $JOB_NAME:v1.$BUILD_ID .'
+           }
+       }
+       stage('Tagging Docker Images'){
+           sshagent(['ansible_login']) {
+              sh 'ssh -o StrictHostKeyChecking=no ubuntu@172.31.9.81 cd /home/ubuntu/'
+              sh 'ssh -o StrictHostKeyChecking=no ubuntu@172.31.9.81 docker image tag $JOB_NAME:v1.$BUILD_ID ambawatyuvaraj/$JOB_NAME:v1.$BUILD_ID'
+              sh 'ssh -o StrictHostKeyChecking=no ubuntu@172.31.9.81 docker image tag $JOB_NAME:v1.$BUILD_ID ambawatyuvaraj/$JOB_NAME:latest'
+           }
+       }
+       stage('Pushing DockerImages on Ansible to DockerHUB'){
+           sshagent(['ansible_login']) {
+               withCredentials([string(credentialsId: 'docker_pass', variable: 'docker_pass')]) {
+                   sh "ssh -o StrictHostKeyChecking=no ubuntu@172.31.9.81 docker login -u ambawatyuvaraj -p ${docker_pass}"
+                   sh 'ssh -o StrictHostKeyChecking=no ubuntu@172.31.9.81 docker image push  ambawatyuvaraj/$JOB_NAME:v1.$BUILD_ID'
+                   sh 'ssh -o StrictHostKeyChecking=no ubuntu@172.31.9.81 docker image push ambawatyuvaraj/$JOB_NAME:latest'
+                   sh 'ssh -o StrictHostKeyChecking=no ubuntu@172.31.9.81 docker image rm ambawatyuvaraj/$JOB_NAME:latest ambawatyuvaraj/$JOB_NAME:v1.$BUILD_ID $JOB_NAME:v1.$BUILD_ID'
+               }
+           }
+       }
+       stage('Copy files from Jenkins to Kubernetes server'){
+            sshagent(['ansible_login']) {
+                  sh "ssh -o StrictHostKeyChecking=no ubuntu@172.31.12.200"
+                  sh 'scp /var/lib/jenkins/workspace/cicd-project-1/* ubuntu@172.31.12.200:/home/ubuntu'
+            }
+       }
+       stage('Kubernetes Deployment using Ansible Playbook'){
+            sshagent(['ansible_login']) {
+                  sh 'ssh -o StrictHostKeyChecking=no ubuntu@172.31.9.81 cd /home/ubuntu/'
+                  sh 'ssh -o StrictHostKeyChecking=no ubuntu@172.31.9.81 ansible-playbook Ansible.yaml'
+            } 
+       }
+}
